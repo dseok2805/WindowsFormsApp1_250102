@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,39 +19,54 @@ namespace WindowsFormsApp1_250102
         public Form1()
         {
             InitializeComponent();
-
-            // ref와 out 메서드 예제 사용
-            int[] array1 = new int[5];
-            FillArray_Ref(ref array1);
-            foreach (int num in array1)
-            {
-                Console.Write(num + " ");
-            }
-            Console.WriteLine();
-
-            FillArray_Out(10, out int[] array2);
-            foreach (int num in array2)
-            {
-                Console.Write(num + " ");
-            }
         }
 
-        // ref를 사용하는 메서드
-        private void FillArray_Ref(ref int[] array)
+        /// <summary>
+        /// 파일 경로와 배열을 입력받아 파일 내용을 배열에 저장하는 메소드
+        /// </summary>
+        /// <param name="path">파일 경로</param>
+        /// <param name="lines">파일의 각 줄을 저장할 배열</param>
+        private void ReadFileLines(string path, out string[] lines)
         {
-            for (int i = 0; i < array.Length; i++)
+            if (!File.Exists(path))
             {
-                array[i] = i + 1;
+                throw new FileNotFoundException("지정된 파일 경로가 존재하지 않습니다.");
             }
+
+            // 파일 읽기 및 줄 단위로 배열에 저장
+            lines = File.ReadAllLines(path);
         }
 
-        // out을 사용하는 메서드
-        private void FillArray_Out(int size, out int[] array)
+        private void btnReadFile_Click(object sender, EventArgs e)
         {
-            array = new int[size];
-            for (int i = 0; i < array.Length; i++)
+            // 파일 경로 및 내용을 저장할 배열 선언
+            string filePath = txtFilePath.Text.Trim('"'); // 큰따옴표 제거 // TextBox에서 파일 경로 입력
+            string[] fileLines;
+
+            try
             {
-                array[i] = i + 1;
+                // 파일 경로 및 배열을 전달하고 내용을 저장
+                ReadFileLines(filePath, out fileLines);
+
+                // ListBox에 파일 내용 출력
+                lstFileContent.Items.Clear();
+                foreach (string line in fileLines)
+                {
+                    lstFileContent.Items.Add(line);
+                }
+                MessageBox.Show("파일 읽기가 완료되었습니다.");
+            }
+            catch (FileNotFoundException ex)
+            {
+                MessageBox.Show("파일을 찾을 수 없습니다: " + ex.Message);
+            }
+            catch (IOException ex)
+            {
+                MessageBox.Show("입출력 오류: " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("알 수 없는 오류: " + ex.Message);
             }
         }
     }
