@@ -9,101 +9,114 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-// 어샘블리(프로젝트) 전체에서 접근 가능한 영역
-//int global_number; // C# 7.3에서는 안됨
-
 namespace WindowsFormsApp1_250102
 {
     public partial class Form1 : Form
     {
+        // 딕셔너리 초기화
+        Dictionary<string, string> idPasswordDict = new Dictionary<string, string>();
+        Dictionary<string, string> idPhoneDict = new Dictionary<string, string>();
         public Form1()
         {
             InitializeComponent();
+            // 버튼 추가
+            Button openFileButton = new Button();
+            openFileButton.Text = "파일 열기";
+            openFileButton.Dock = DockStyle.Top;
+            openFileButton.Click += OpenFileButton_Click;
+            Controls.Add(openFileButton);
         }
 
-        /// <summary>
-        /// 파일 경로와 배열을 입력받아 파일 내용을 배열에 저장하는 메소드
-        /// </summary>
-        /// <param name="path">파일 경로</param>
-        /// <param name="lines">파일의 각 줄을 저장할 배열</param>
-        private void ReadFileLines(string path, out string[] lines)
+        private void OpenFileButton_Click(object sender, EventArgs e)
         {
-            if (!File.Exists(path))
+            using (OpenFileDialog openFileDialog = new OpenFileDialog())
             {
-                throw new FileNotFoundException("지정된 파일 경로가 존재하지 않습니다.");
-            }
+                openFileDialog.Filter = "텍스트 파일 (*.txt)|*.txt|모든 파일 (*.*)|*.*";
+                openFileDialog.Title = "파일 열기";
 
-            // 파일 읽기 및 줄 단위로 배열에 저장
-            lines = File.ReadAllLines(path);
-        }
-
-        private string[] ProcessFileLines(string[] lines)
-        {
-            string[] processedLines = new string[lines.Length];
-
-            for (int i = 0; i < lines.Length; i++)
-            {
-                if (double.TryParse(lines[i], out _)) // 숫자로 변환 가능 여부 확인
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
                 {
-                    processedLines[i] = "숫자" + lines[i];
+                    string filePath = openFileDialog.FileName;
+
+                    try
+                    {
+                        using (StreamReader reader = new StreamReader(filePath))
+                        {
+                            string line;
+                            while ((line = reader.ReadLine()) != null)
+                            {
+                                // 한 줄을 읽고 ,로 분리
+                                string[] parts = line.Split(',');
+
+                                if (parts.Length >= 2) // 아이디와 비밀번호는 반드시 있어야 함
+                                {
+                                    string id = parts[0].Trim();
+                                    string password = parts[1].Trim();
+                                    string phone = parts.Length > 2 ? parts[2].Trim() : null;
+
+                                    // 딕셔너리에 추가
+                                    idPasswordDict[id] = password;
+                                    idPhoneDict[id] = phone;
+                                }
+                            }
+                        }
+
+                        // 결과 확인용 (메시지 박스로 출력)
+                        string result = "ID-Password Dictionary:\n";
+                        foreach (var pair in idPasswordDict)
+                        {
+                            result += $"{pair.Key}: {pair.Value}\n";
+                        }
+
+                        result += "\nID-Phone Dictionary:\n";
+                        foreach (var pair in idPhoneDict)
+                        {
+                            result += $"{pair.Key}: {pair.Value ?? "null"}\n";
+                        }
+
+                        MessageBox.Show(result, "딕셔너리 저장 결과", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"파일을 처리하는 중 오류가 발생했습니다.\n{ex.Message}", "오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
+        private void button_LOGIN_Click(object sender, EventArgs e)
+        {
+            string inputId = textBox_ID.Text.Trim();
+            string inputPassword = textBox_PW.Text.Trim();
+
+            if (idPasswordDict.ContainsKey(inputId))
+            {
+                if (idPasswordDict[inputId] == inputPassword)
+                {
+                    // 로그인 성공
+                    string phone = idPhoneDict[inputId] ?? "등록되지 않음";
+                    MessageBox.Show($"로그인 성공!\nID: {inputId}\n전화번호: {phone}", "성공", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
                 else
                 {
-                    processedLines[i] = "문자" + lines[i];
+                    // 비밀번호 불일치
+                    MessageBox.Show("로그인 실패: 비밀번호가 일치하지 않습니다.", "실패", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
             }
-
-            return processedLines;
-        }
-
-        private void btnReadFile_Click(object sender, EventArgs e)
-        {
-            // 파일 경로 및 내용을 저장할 배열 선언
-            string filePath = txtFilePath.Text.Trim('"'); // 큰따옴표 제거
-            string[] fileLines = null; // 초기화
-            string[] processedLines;
-
-            try
+            else
             {
-                // 파일 경로 및 배열을 전달하고 내용을 저장
-                ReadFileLines(filePath, out fileLines);
-
-                // 파일 내용을 처리
-                processedLines = ProcessFileLines(fileLines);
-
-                // ListBox에 처리된 내용 출력
-                lstFileContent.Items.Clear();
-                foreach (string line in processedLines)
+                bool passwordMatches = idPasswordDict.Values.Contains(inputPassword);
+                if (passwordMatches)
                 {
-                    lstFileContent.Items.Add(line);
+                    // 아이디 불일치
+                    MessageBox.Show("로그인 실패: 아이디가 일치하지 않습니다.", "실패", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
-
-                MessageBox.Show("파일 읽기 및 처리가 완료되었습니다.");
-            }
-            catch (FileNotFoundException ex)
-            {
-                MessageBox.Show("파일을 찾을 수 없습니다: " + ex.Message);
-            }
-            catch (IOException ex)
-            {
-                MessageBox.Show("입출력 오류: " + ex.Message);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("알 수 없는 오류: " + ex.Message);
-            }
-            finally
-            {
-                // 작업 완료 메시지 표시 또는 리소스 해제
-                MessageBox.Show("파일 읽기 작업이 종료되었습니다.");
-                // 추가적으로, 필요하면 ListBox 초기화 또는 다른 정리 작업 수행
-                if (fileLines == null)
+                else
                 {
-                    lstFileContent.Items.Clear(); // 실패 시 ListBox 초기화
+                    // 아이디와 비밀번호 모두 불일치
+                    MessageBox.Show("로그인 실패: 아이디와 비밀번호가 모두 일치하지 않습니다.", "실패", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
             }
         }
     }
 }
-
-
