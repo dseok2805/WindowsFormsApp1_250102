@@ -37,24 +37,48 @@ namespace WindowsFormsApp1_250102
             lines = File.ReadAllLines(path);
         }
 
+        private string[] ProcessFileLines(string[] lines)
+        {
+            string[] processedLines = new string[lines.Length];
+
+            for (int i = 0; i < lines.Length; i++)
+            {
+                if (double.TryParse(lines[i], out _)) // 숫자로 변환 가능 여부 확인
+                {
+                    processedLines[i] = "숫자" + lines[i];
+                }
+                else
+                {
+                    processedLines[i] = "문자" + lines[i];
+                }
+            }
+
+            return processedLines;
+        }
+
         private void btnReadFile_Click(object sender, EventArgs e)
         {
             // 파일 경로 및 내용을 저장할 배열 선언
             string filePath = txtFilePath.Text.Trim('"'); // 큰따옴표 제거
             string[] fileLines = null; // 초기화
+            string[] processedLines;
 
             try
             {
                 // 파일 경로 및 배열을 전달하고 내용을 저장
                 ReadFileLines(filePath, out fileLines);
 
-                // ListBox에 파일 내용 출력
+                // 파일 내용을 처리
+                processedLines = ProcessFileLines(fileLines);
+
+                // ListBox에 처리된 내용 출력
                 lstFileContent.Items.Clear();
-                foreach (string line in fileLines)
+                foreach (string line in processedLines)
                 {
                     lstFileContent.Items.Add(line);
                 }
-                MessageBox.Show("파일 읽기가 완료되었습니다.");
+
+                MessageBox.Show("파일 읽기 및 처리가 완료되었습니다.");
             }
             catch (FileNotFoundException ex)
             {
