@@ -40,8 +40,8 @@ namespace WindowsFormsApp1_250102
         private void btnReadFile_Click(object sender, EventArgs e)
         {
             // 파일 경로 및 내용을 저장할 배열 선언
-            string filePath = txtFilePath.Text.Trim('"'); // 큰따옴표 제거 // TextBox에서 파일 경로 입력
-            string[] fileLines;
+            string filePath = txtFilePath.Text.Trim('"'); // 큰따옴표 제거
+            string[] fileLines = null; // 초기화
 
             try
             {
@@ -68,7 +68,18 @@ namespace WindowsFormsApp1_250102
             {
                 MessageBox.Show("알 수 없는 오류: " + ex.Message);
             }
+            finally
+            {
+                // 작업 완료 메시지 표시 또는 리소스 해제
+                MessageBox.Show("파일 읽기 작업이 종료되었습니다.");
+                // 추가적으로, 필요하면 ListBox 초기화 또는 다른 정리 작업 수행
+                if (fileLines == null)
+                {
+                    lstFileContent.Items.Clear(); // 실패 시 ListBox 초기화
+                }
+            }
         }
     }
 }
+
 
